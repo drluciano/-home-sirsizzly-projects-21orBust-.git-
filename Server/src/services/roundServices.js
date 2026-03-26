@@ -46,6 +46,20 @@ async function getLatestRoundState(trx, runId) {
     .first();
 }
 
+async function getRoundWithHandsByStateId(roundStateId) {
+  const roundState = await knex("round_states")
+    .where({ id: roundStateId })
+    .first();
+
+  if (!roundState) return null;
+
+  const hands = await knex("round_hands")
+    .where({ round_state_id: roundState.id })
+    .orderBy("hand_index", "asc");
+
+  return { roundState, hands };
+}
+
 // ----------------- start round -----------------
 async function startRound(runId) {
   return knex.transaction(async (trx) => {
@@ -56,7 +70,6 @@ async function startRound(runId) {
       .insert({
         run_id: runId,
         round_number: nextRoundNumber,
-        is_complete: false,
         created_at: trx.fn.now(),
       })
       .returning("*");
